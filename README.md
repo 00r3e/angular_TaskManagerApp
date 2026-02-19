@@ -74,8 +74,12 @@ Angular Forms (Template-driven forms)
 📂 Project Structure
 src/
  └── app/
+ 
+     
      ├── task-manager.ts      # Component logic
+     
      ├── task-manager.html    # Template
+     
      ├── task-manager.css     # Styling
 
 ▶️ Getting Started
