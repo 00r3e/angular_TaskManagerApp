@@ -1,0 +1,179 @@
+<!-- Header -->
+<div class="header-section">
+  <h1>{{title}}</h1>
+  <p class="header-subtitle">My tasks</p>
+</div>
+<!-- Stats Container -->
+<div class="stats-container">
+  <div class="stat-card">
+    <label class="stat-label">TOTAL TASKS</label>
+    <div class="stat-value">{{ tasks.length }}</div>
+  </div>
+  <div class="stat-card">
+    <label class="stat-label">COMPLETED</label>
+    <div class="stat-value">{{ getCompletedTasks() }}</div>
+  </div>
+  <div class="stat-card">
+    <label class="stat-label">PENDING</label>
+    <div class="stat-value">{{ getPendingTasks() }}</div>
+  </div>
+  <div class="stat-card">
+    <label class="stat-label">OVERDUE</label>
+    <div class="stat-value">{{ getOverdueTasks() }}</div>
+  </div>
+  <div class="stat-card">
+    <label class="stat-label">COMPLETION RATE</label>
+    <div class="stat-value" [style.color]="getCompletionRate() >= 70 ? 'green' 
+                                            : getCompletionRate() >= 50 ? 'orange' 
+                                              : 'red'">{{ getCompletionRate() }} %</div>
+  </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions">
+  <select class="filter-dropdown" [(ngModel)]="status" (ngModelChange)="onFilterChange('status')"  name="All Status">
+    <option value="All" selected>All Status</option>
+    <option value="pending">Pending</option>
+    <option value="in-progress">In Progress</option>
+    <option value="completed">Completed</option>
+    <option value="cancelled">Cancelled</option>
+  </select>
+  <select class="filter-dropdown" [(ngModel)]="category" (ngModelChange)="onFilterChange('category')">
+    <option value="All" selected>All Categories</option>
+    <option value="work">work</option>
+    <option value="personal">personal</option>
+    <option value="shopping">shopping</option>
+    <option value="health">health</option>
+    <option value="finance">finance</option>
+    <option value="education">education</option>
+    <option value="other">other</option>
+  </select>
+  <select class="filter-dropdown" [(ngModel)]="priority" (ngModelChange)="onFilterChange('priority')">
+    <option value="All" selected>All Priorities</option>
+    <option value="low">low</option>
+    <option value="medium">medium</option>
+    <option value="high">high</option>
+    <option value="urgent">urgent</option>
+  </select>
+  <input type="checkbox" [(ngModel)]="showCompletedTasks" (ngModelChange)="onFilterChange('checkbox')"/>
+  <label>Show Completed Tasks</label>
+</div>
+
+<!-- Alert -->
+
+@switch (productivityLevel) {
+  @case ('excellent'){
+    <div class="alert alert-success">[ALERT] Job done!!</div>
+  }
+  @case ('good'){
+    <div class="alert alert-info">[ALERT] You are almost there.</div>
+  }
+  @case ('needs-improvement'){
+    <div class="alert alert-warning">[ALERT] Time to get back on track! Start with small, easy tasks.</div>
+  }
+  @case ('poor'){
+<div class="alert alert-danger">[ALERT] You need to hurry up.</div>
+  }
+
+}
+
+<!-- Form -->
+<form class="add-task-section" #form="ngForm"
+      (ngSubmit)="addTask(form)">
+  <h1 class="add-task-header">Add New Task</h1>
+  <div class="form-grid">
+    <div class="form-group">
+      <label for="title">Title*</label>
+      <input [(ngModel)]="newTask.title" name="title" required #titleInput (blur)="focusCategory()"/>
+    </div>
+    <div class="form-group">
+      <label for="category">Category*</label>
+      <select id="category" [(ngModel)]="newTask.category" name="category" required #categorySelect (blur)="focusDueDate()" >
+        <option value="" disabled selected hidden>Select Category</option>
+        <option value="work">work</option>
+        <option value="personal">personal</option>
+        <option value="shopping">shopping</option>
+        <option value="health">health</option>
+        <option value="finance">finance</option>
+        <option value="education">education</option>
+        <option value="other">other</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="priority">Priority</label>
+      <select id="priority" [(ngModel)]="newTask.priority" name="priority">
+        <option value="low">low</option>
+        <option value="medium" selected >medium</option>
+        <option value="high">high</option>
+        <option value="urgent">urgent</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="date">Due Date</label>
+      <input type="date" id="date" [(ngModel)]="newTask.dueDate" name="date" required #dueDateInput />
+    </div>
+    <div class="form-group">
+      <label for="status">Status</label>
+      <select id="status" [(ngModel)]="newTask.status" name="status">
+        <option value="" disabled selected hidden>Select Status</option>
+        <option value="pending">Pending</option>
+        <option value="in-progress">In Progress</option>
+        <option value="completed">Completed</option>
+        <option value="cancelled">Cancelled</option>
+      </select>
+    </div>
+  </div>
+  <div class="form-group">
+    <label for="description">Description</label>
+    <textarea id="description" [(ngModel)]="newTask.description" name="description"></textarea>
+  </div>
+  <div class="form-actions">
+    <div class="tooltip-wrapper" [attr.title]="form.invalid ? 'Please fill required fields' : null">
+      <button class="btn btn-primary" type="submit" [disabled]="form.invalid" >Add Task</button>
+    </div>
+    <button class="btn btn-secondary" (click)="clearForm()">Clear</button>
+  </div>
+</form>
+
+<!-- Task Section -->
+<div class="tasks-section">
+  <h1 class="section-header">Tasks</h1>
+  <div class="tasks-list">
+    @for (task of filteredTasks; track task.id; let i = $index) {
+      <div [ngClass]="['task-item', 'priority-' + task.priority, task.status === 'completed' ? 'task-completed' : '']">
+        <input
+          class="task-checkbox"
+          type="checkbox"
+          [checked]="task.status === 'completed'"
+          (change)="toggleTaskComplete(task.id)"
+        />
+
+        <div class="task-content">
+          <div class="task-header">
+            <div class="task-number">{{ i + 1 }}</div>
+            <div class="task-title">{{ task.title }}</div>
+          </div>
+
+          <div class="task-description">{{ task.description }}</div>
+
+          <div class="task-meta">
+            <div class="category-tag" [class]="'category-' + task.category">{{ task.category }}</div>
+            <div class="status-badge" [class]="'status-' + task.status">{{ task.status }}</div>
+            <div class="task-actions" [style.color]="isOverdue(task) ? 'Red' : ''">Due: {{ task.dueDate | date: 'dd/MM/yyyy' }}</div>
+          </div>
+        </div>
+        <button class="btn btn-danger" (click)="deleteTask(task.id)">Delete</button>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- Productivity Score -->
+<div class="productivity-score">
+  <div class="score-label">YourProductivity Score</div>
+  <div class="score-value">{{ getCompletionRate() }}%</div>
+  <div class="score-label">
+    @if(getCompletionRate()<100){Keep going!}@else{Nice job!}
+  </div>
+</div>
+
