@@ -131,16 +131,6 @@ export class TaskManager {
     return this.statisticsService.getProductivityLevel();
   }
 
-  onFieldFocus(field: string): void
-  {
-    //Could add validation feedback here
-  }
-
-  onFieldBlur(field: string): void
-  {
-    //Could add validation feedback here
-  }
-
   addTask(): void
   {
     if (!this.newTask.title || !this.newTask.category || !this.newTask.dueDate)
