@@ -1,18 +1,20 @@
 <div class="task-manager-container">
+  
   <!-- Header -->
   <div class="header-section">
-    <h1>{{ title }}</h1>
+    <h1>Task Manager </h1>
     <p class="header-subtitle">My tasks</p>
   </div>
+  
   <!-- Stats Container -->
   <div class="stats-container">
     <div class="stat-card">
       <label class="stat-label">TOTAL TASKS</label>
-      <div class="stat-value">{{ tasks.length }}</div>
+      <div class="stat-value">{{ getTasks().length }}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">COMPLETED</label>
-      <div class="stat-value">{{ getCompletedTasks() }}</div>
+      <div class="stat-value">{{ getCompletedTasks()}}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">PENDING</label>
@@ -27,9 +29,7 @@
       <div
         class="stat-value"
         [style.color]="
-          getCompletionRate() >= 70 ? 'green' : getCompletionRate() >= 50 ? 'orange' : 'red'
-        "
-      >
+          getCompletionRate() >= 70 ? 'green' : getCompletionRate() >= 50 ? 'orange' : 'red'" >
         {{ getCompletionRate() }} %
       </div>
     </div>
@@ -39,52 +39,42 @@
   <div class="quick-actions">
     <select
       class="filter-dropdown"
-      [(ngModel)]="status"
-      (ngModelChange)="onFilterChange('status')"
+      [(ngModel)]="filterStatus"
       name="All Status"
     >
-      <option value="All" selected>All Status</option>
-      <option value="pending">Pending</option>
-      <option value="in-progress">In Progress</option>
-      <option value="completed">Completed</option>
-      <option value="cancelled">Cancelled</option>
+      <option value="all" selected>All Status</option>
+      @for(status of statuses; track status){
+        <option [value]="status">{{status}}</option>
+      }
     </select>
     <select
       class="filter-dropdown"
-      [(ngModel)]="category"
-      (ngModelChange)="onFilterChange('category')"
+      [(ngModel)]="filterCategory"
     >
-      <option value="All" selected>All Categories</option>
-      <option value="work">work</option>
-      <option value="personal">personal</option>
-      <option value="shopping">shopping</option>
-      <option value="health">health</option>
-      <option value="finance">finance</option>
-      <option value="education">education</option>
-      <option value="other">other</option>
+      <option value="all" selected>All Categories</option>
+      @for(category of categories; track category){
+      <option [value]="category">{{category}}</option>
+      }
     </select>
     <select
       class="filter-dropdown"
-      [(ngModel)]="priority"
-      (ngModelChange)="onFilterChange('priority')"
+      [(ngModel)]="filterPriority"
     >
-      <option value="All" selected>All Priorities</option>
-      <option value="low">low</option>
-      <option value="medium">medium</option>
-      <option value="high">high</option>
-      <option value="urgent">urgent</option>
+      <option value="all" selected>All Priorities</option>
+      @for(priority of priorities; track priority){
+      <option [value]="priority">{{priority}}</option>
+      }
     </select>
     <input
       type="checkbox"
-      [(ngModel)]="showCompletedTasks"
-      (ngModelChange)="onFilterChange('checkbox')"
+      [(ngModel)]="showCompleted"
     />
     <label>Show Completed Tasks</label>
   </div>
 
   <!-- Alert -->
 
-  @switch (productivityLevel) {
+  @switch (getProductivityLevel()) {
     @case ('excellent') {
       <div class="alert alert-success">[ALERT] Job done!!</div>
     }
@@ -102,7 +92,7 @@
   }
 
   <!-- Form -->
-  <form class="add-task-section" #form="ngForm" (ngSubmit)="addTask(form)">
+  <form class="add-task-section" #form="ngForm" (ngSubmit)="addTask()">
     <h1 class="add-task-header">Add New Task</h1>
     <div class="form-grid">
       <div class="form-group">
@@ -111,8 +101,6 @@
           [(ngModel)]="newTask.title"
           name="title"
           required
-          #titleInput
-          (blur)="focusCategory()"
         />
       </div>
       <div class="form-group">
@@ -122,9 +110,8 @@
           [(ngModel)]="newTask.category"
           name="category"
           required
-          #categorySelect
-          (blur)="focusDueDate()"
         >
+        
           <option value="" disabled selected hidden>Select Category</option>
           <option value="work">work</option>
           <option value="personal">personal</option>
@@ -185,7 +172,7 @@
   <div class="tasks-section">
     <h1 class="section-header">Tasks</h1>
     <div class="tasks-list">
-      @for (task of filteredTasks; track task.id; let i = $index) {
+      @for (task of getFilteredTasks(); track task.id; let i = $index) {
         <div
           [ngClass]="[
             'task-item',

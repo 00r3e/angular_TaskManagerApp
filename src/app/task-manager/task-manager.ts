@@ -1,29 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, ElementRef } from '@angular/core';
+import { Component, ViewChild, ElementRef, inject } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { TasksService } from '../services/tasks-service';
+import { FilterService } from '../services/filter-service';
+import { StatisticsService } from '../services/statistics-service';
 
 
 //----------TYPES-----------
 
-type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled';
-type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-type TaskCategory =
-  | 'work'
-  | 'personal'
-  | 'shopping'
-  | 'health'
-  | 'finance'
-  | 'education'
-  | 'other';
 
-type Task = {
+export interface Task {
   id: number;
   title: string;
   description: string;
-  category: TaskCategory;
-  priority: TaskPriority;
+  category: string;
+  priority: string;
   dueDate: Date;
-  status: TaskStatus;
+  status: string;
   createdAt: Date;
 };
 
@@ -36,191 +29,193 @@ type Task = {
 })
 export class TaskManager {
 
-
-  //----VIEW REFERENCES-------
-
-  @ViewChild('titleInput') titleInput!: ElementRef;
-  @ViewChild('categoryInput') categorySelect!: ElementRef;
-  @ViewChild('dueDateInput') dueDateInput!: ElementRef;
+ //Service
+  private tasksService : TasksService = inject(TasksService);
+  private filterService: FilterService = inject(FilterService);
+  private statisticsService: StatisticsService = inject(StatisticsService);
 
 
-  //---------STATE-----------
+  //Dropdown Options
+  categories: string[] = ['work', 'personal', 'shopping', 'health', 'finance', 'education', 'other'];
+  priorities: string[] = ['low', 'medium', 'high', 'urgent'];
+  statuses: string[] = ['pending', 'in-progress', 'completed', 'cancelled'];
 
-  title = 'Task Manager';
-
-  tasks: Task[] = [];
-  filteredTasks: Task[] = [];
-
-  showCompletedTasks = false;
-
-  priority: 'All' | TaskPriority = 'All';
-  status: 'All' | TaskStatus = 'All';
-  category: 'All' | TaskCategory = 'All';
-
-  completionRate = 0;
-  productivityLevel = 'poor';
-
-  newTask = {
+  //Form data
+  newTask: {
+    title: string,
+    description: string,
+    category: string,
+    priority: string,
+    dueDate: string | Date,
+    status: string
+  } = {
     title: '',
     description: '',
-    category: '' as TaskCategory | '',
-    priority: 'medium' as TaskPriority,
+    category: '',
+    priority: 'medium',
     dueDate: '',
-    status: '' as TaskStatus | '',
+    status: 'pending'
   };
 
+  
+  //Getters and Setters for filters
+  get filterStatus(): string
+  {
+    return this.filterService.getStatusFilter(); 
+  }
 
-  //--------LIFECYCLE-----------
+  set filterStatus(value: string)
+  {
+    this.filterService.setStatusFilter(value);
+  }
 
-  ngOnInit(): void {
-    this.refreshStats();
+  get filterCategory(): string
+  {
+    return this.filterService.getCategoryFilter();
+  }
+
+  set filterCategory(value: string)
+  {
+    this.filterService.setCategoryFilter(value);
+  }
+
+  get filterPriority(): string
+  {
+    return this.filterService.getPriorityFilter();
+  }
+
+  set filterPriority(value: string)
+  {
+    this.filterService.setPriorityFilter(value);
+  }
+
+  get showCompleted(): boolean
+  {
+    return this.filterService.getShowCompleted();
+  }
+
+  set showCompleted(value: boolean)
+  {
+    this.filterService.setShowCompleted(value);
   }
 
 
-  //-------ACTIONS----------------
 
-  addTask(form: NgForm): void {
-    if (!this.isTaskValid()) return;
+  getTasks(): Task[]
+  {
+    return this.tasksService.getTasks();
+  }
+
+  getCompletedTasks(): number
+  {
+    return this.statisticsService.getCompletedTasksCount();
+  }
+
+  getPendingTasks(): number
+  {
+    return this.statisticsService.getPendingTasksCount();
+  }
+
+  getOverdueTasks(): number
+  {
+    return this.statisticsService.getOverdueTasksCount();
+  }
+
+  getCompletionRate(): number
+  {
+    return this.statisticsService.getCompletionRate();
+  }
+
+  getProductivityLevel(): string
+  {
+    return this.statisticsService.getProductivityLevel();
+  }
+
+  onFieldFocus(field: string): void
+  {
+    //Could add validation feedback here
+  }
+
+  onFieldBlur(field: string): void
+  {
+    //Could add validation feedback here
+  }
+
+  addTask(): void
+  {
+    if (!this.newTask.title || !this.newTask.category || !this.newTask.dueDate)
+    {
+      return;
+    }
 
     const task: Task = {
       id: Date.now(),
-      title: this.newTask.title.trim(),
-      description: this.newTask.description.trim(),
-      category: this.newTask.category as TaskCategory,
+      title: this.newTask.title,
+      description: this.newTask.description,
+      category: this.newTask.category,
       priority: this.newTask.priority,
       dueDate: new Date(this.newTask.dueDate),
-      status: this.newTask.status || 'pending',
-      createdAt: new Date(),
+      status: this.newTask.status,
+      createdAt: new Date()
     };
 
-    this.tasks.push(task);
+    this.tasksService.addTask(task);
     this.clearForm();
-    this.refreshStats();
   }
 
-  deleteTask(id: number): void {
-    this.tasks = this.tasks.filter(task => task.id !== id);
-    this.refreshStats();
-  }
-
-  toggleTaskComplete(id: number): void {
-
-    this.showCompletedTasks = true;
-    
-    const task = this.tasks.find(t => t.id === id);
-    if (!task) return;
-
-    task.status = task.status === 'completed' ? 'pending' : 'completed';
-    this.refreshStats();
-  }
-
-
-  //-------FILTERING & STATS------------
-
-  getFilteredTasks(): Task[] {
-    return this.tasks.filter(task => {
-      const statusMatch =
-        this.status === 'All' || task.status === this.status;
-
-      const categoryMatch =
-        this.category === 'All' || task.category === this.category;
-
-      const priorityMatch =
-        this.priority === 'All' || task.priority === this.priority;
-
-      const completedMatch =
-        this.showCompletedTasks || task.status !== 'completed';
-
-      return statusMatch && categoryMatch && priorityMatch && completedMatch;
-    });
-  }
-
-  getCompletionRate(): number {
-    if (!this.tasks.length) return 0;
-
-    const completed = this.tasks.filter(t => t.status === 'completed').length;
-    return Math.round((completed / this.tasks.length) * 100);
-  }
-
-  getProductivityLevel(): string {
-    const rate = this.getCompletionRate();
-
-    if (rate > 80) return 'excellent';
-    if (rate >= 60) return 'good';
-    if (rate >= 40) return 'needs-improvement';
-    return 'poor';
-  }
-  getCompletedTasks():number{ 
-    return this.tasks.filter(t => t.status==='completed').length; 
-  } 
-  
-  getPendingTasks():number{ 
-    return this.tasks.filter(t => t.status==='pending').length; 
-  } 
-  
-  getOverdueTasks():number{ 
-    return this.tasks.filter(t => this.isOverdue(t)).length; 
-  }
-
-
-  //--------HELPERS-----------
-
-  isOverdue(task: Task): boolean {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const due = new Date(task.dueDate);
-    due.setHours(0, 0, 0, 0);
-
-    return due < today;
-  }
-
-  getTasksByStatus(status: TaskStatus): Task[] {
-    return this.tasks.filter(t => t.status === status);
-  }
-
-  refreshStats(): void {
-    this.filteredTasks = this.getFilteredTasks();
-    this.completionRate = this.getCompletionRate();
-    this.productivityLevel = this.getProductivityLevel();
-  }
-
-  clearForm(): void {
+  clearForm(): void
+  {
     this.newTask = {
       title: '',
       description: '',
       category: '',
       priority: 'medium',
       dueDate: '',
-      status: '',
+      status: 'pending'
     };
   }
 
-  isTaskValid(): boolean {
-    return !!(
-      this.newTask.title.trim() &&
-      this.newTask.category &&
-      this.newTask.priority &&
-      this.newTask.dueDate
-    );
-  }
+  getFilteredTasks(): Task[]
+  {
+    let filtered = [...this.getTasks()];
 
-
-  //-----------UX HELPERS-------------
-
-  focusCategory(): void {
-    if (this.newTask.title.trim()) {
-      this.categorySelect.nativeElement.focus();
+    if (this.filterStatus !== 'all')
+    {
+      filtered = filtered.filter(task => task.status === this.filterStatus);
     }
-  }
 
-  focusDueDate(): void {
-    if (this.newTask.category) {
-      this.dueDateInput.nativeElement.focus();
+    if (this.filterCategory !== 'all')
+    {
+      filtered = filtered.filter(task => task.category === this.filterCategory);
     }
+
+    if (this.filterPriority !== 'all')
+    {
+      filtered = filtered.filter(task => task.priority === this.filterPriority);
+    }
+
+    if (!this.showCompleted)
+    {
+      filtered = filtered.filter(task => task.status !== 'completed');
+    }
+
+    return filtered;
   }
 
-  onFilterChange(source: string): void {
-    this.filteredTasks = this.getFilteredTasks();
+  toggleTaskComplete(id: number): void
+  {
+    this.tasksService.toggleTaskComplete(id);
+  }
+
+  isOverdue(task: Task): boolean
+  {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return new Date(task.dueDate) < today && task.status != 'completed';
+  }
+
+  deleteTask(id: number): void
+  {
+    this.tasksService.deleteTask(id);
   }
 }
