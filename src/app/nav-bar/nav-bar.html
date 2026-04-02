@@ -1,6 +1,12 @@
 <nav class="navbar">
     <div class="navbar-title">Task Manager</div>
     <ul class="navbar-links">
-        <li><a routerLink="/dashboard" routerLinkActive="'active'">Dashboard</a></li>
+        <li><a routerLink="/dashboard" routerLinkActive="active">Dashboard</a></li>
+        @if(accountService.currentUserName == "" || accountService.currentUserName == null || accountService.currentUserName == undefined){
+            <li><a routerLink="/login" routerLinkActive="active">Login</a></li>
+            <li><a routerLink="/register" routerLinkActive="active">Register</a></li>
+        }@else{
+            <li><a routerLink="/logout" routerLinkActive="active" (click)="onLogOutClicked()">Logout</a></li>
+        }
     </ul>
 </nav>

@@ -1,5 +1,7 @@
-import { Injectable } from '@angular/core';
-import { Task} from '../task-manager/task-manager';
+import { Injectable, inject } from '@angular/core';
+import { Task, TaskAddRequest} from '../task-manager/task-manager';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Observable, Observer } from 'rxjs';
 
 
 @Injectable({
@@ -7,42 +9,42 @@ import { Task} from '../task-manager/task-manager';
 })
 
 export class TasksService {
+
+  private http = inject(HttpClient);
   
   tasks: Task[] = [];
 
-  getTasks(): Task[]
+  getTasks(): Observable<Task[]>
   {
-    return this.tasks;
-  }
+    
+    let headers = new HttpHeaders();
 
-  addTask(task: Task): void
-  {
-    this.tasks.push(task);
-  }
+    const token = 
+    localStorage.getItem('token');
 
-  deleteTask(id: number): void
-  {
-    const index = this.tasks.findIndex(t => t.id === id);
-    if (index !== -1)
-    {
-      this.tasks.splice(index, 1);
+    if (token) {
+      headers = headers.set("Authorization", `Bearer ${token}`);
+      console.log(headers);
     }
+    return this.http.get<Task[]>("/api/tasks", {headers} );
   }
 
-  toggleTaskComplete(id: number): void
+  addTask(task: TaskAddRequest): Observable<Task>
   {
-    const task = this.tasks.find(t => t.id === id);
-    if (task)
-    {
-      if (task.status === 'completed')
-      {
-        task.status = 'pending';
-      }
-      else
-      {
-        task.status = 'completed';
-      }
-    }
+    let headers = new HttpHeaders();
+    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
+    return this.http.post<Task>("/api/tasks", task, {headers: headers});
   }
 
+  deleteTask(id: number): Observable<void> {
+    let headers = new HttpHeaders();
+    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
+    return this.http.delete<void>(`/api/tasks/${id}`, {headers: headers });
+  }
+
+  toggleTaskComplete(id: number): Observable<void> {
+    let headers = new HttpHeaders();
+    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
+    return this.http.patch<void>(`/api/tasks/${id}/toggle`, {headers: headers});
+  }
 }

@@ -1,0 +1,82 @@
+<div class="login-container">
+  <div class="login-card">
+
+    <div class="login-header">
+      <h1>Create Account</h1>
+      <p>Register a new account</p>
+    </div>
+
+
+    <form #form="ngForm" (ngSubmit)="onRegister(form)">
+
+        <div class="form-group">
+        <label>Name</label>
+        <input
+          type="text"
+          name="personName"
+          [(ngModel)]="registerUser.personName"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input
+          type="email"
+          name="email"
+          [(ngModel)]="registerUser.email"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Phone</label>
+        <input
+          type="phone"
+          name="phone"
+          [(ngModel)]="registerUser.phone"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <input
+          type="password"
+          name="password"
+          [(ngModel)]="registerUser.password"
+          required
+        />
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <input
+          type="password"
+          name="confirmPassword"
+          [(ngModel)]="registerUser.confirmPassword"
+          required
+        />
+      </div>
+
+      <button
+        class="login-btn"
+        type="submit"
+        [disabled]="form.invalid"
+      >
+        Register
+      </button>
+
+      <!-- SAME STYLE BUTTON -->
+      <button
+        type="button"
+        class="register-btn"
+        (click)="goToLogin()"
+      >
+        Back to Login
+      </button>
+
+    </form>
+
+  </div>
+</div>

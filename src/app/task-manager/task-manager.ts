@@ -1,16 +1,15 @@
 import { CommonModule } from '@angular/common';
-import { Component, ViewChild, ElementRef, inject } from '@angular/core';
+import { Component, inject, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { TasksService } from '../services/tasks-service';
 import { FilterService } from '../services/filter-service';
 import { StatisticsService } from '../services/statistics-service';
-
+import { AccountService } from '../services/account';
 
 //----------TYPES-----------
 
-
 export interface Task {
-  id: number;
+  id?: number;
   title: string;
   description: string;
   category: string;
@@ -18,7 +17,17 @@ export interface Task {
   dueDate: Date;
   status: string;
   createdAt: Date;
-};
+}
+
+export interface TaskAddRequest {
+  Title: string;
+  Description: string;
+  Category: string;
+  Priority: string;
+  DueDate: Date;
+  Status: string;
+  CreatedAt: Date;
+}
 
 @Component({
   selector: 'app-task-manager',
@@ -27,185 +36,234 @@ export interface Task {
   templateUrl: './task-manager.html',
   styleUrl: './task-manager.css',
 })
-export class TaskManager {
-
- //Service
-  private tasksService : TasksService = inject(TasksService);
+export class TaskManager implements OnInit{
+  //Service
+  private tasksService: TasksService = inject(TasksService);
   private filterService: FilterService = inject(FilterService);
   private statisticsService: StatisticsService = inject(StatisticsService);
 
-
   //Dropdown Options
-  categories: string[] = ['work', 'personal', 'shopping', 'health', 'finance', 'education', 'other'];
+  categories: string[] = [
+    'work',
+    'personal',
+    'shopping',
+    'health',
+    'finance',
+    'education',
+    'other',
+  ];
   priorities: string[] = ['low', 'medium', 'high', 'urgent'];
   statuses: string[] = ['pending', 'in-progress', 'completed', 'cancelled'];
 
   //Form data
   newTask: {
-    title: string,
-    description: string,
-    category: string,
-    priority: string,
-    dueDate: string | Date,
-    status: string
+    title: string;
+    description: string;
+    category: string;
+    priority: string;
+    dueDate: string | Date;
+    status: string;
   } = {
     title: '',
     description: '',
     category: '',
     priority: 'medium',
     dueDate: '',
-    status: 'pending'
+    status: 'pending',
   };
 
+  tasks: Task[] = [];
   
+  filteredTasks: Task[] = [];
+
+  totalTasks = 0;
+  completedTasks = 0;
+  pendingTasks = 0;
+  overdueTasks = 0;
+  completionRate = 0;
+  productivityLevel = '';
+
+  //Injects
+  private changeDetectorRef = inject(ChangeDetectorRef);
+  private accountService = inject(AccountService);
+
   //Getters and Setters for filters
-  get filterStatus(): string
-  {
-    return this.filterService.getStatusFilter(); 
+  get filterStatus(): string {
+    return this.filterService.getStatusFilter();
   }
 
-  set filterStatus(value: string)
-  {
+  set filterStatus(value: string) {
     this.filterService.setStatusFilter(value);
   }
 
-  get filterCategory(): string
-  {
+  get filterCategory(): string {
     return this.filterService.getCategoryFilter();
   }
 
-  set filterCategory(value: string)
-  {
+  set filterCategory(value: string) {
     this.filterService.setCategoryFilter(value);
   }
 
-  get filterPriority(): string
-  {
+  get filterPriority(): string {
     return this.filterService.getPriorityFilter();
   }
 
-  set filterPriority(value: string)
-  {
+  set filterPriority(value: string) {
     this.filterService.setPriorityFilter(value);
   }
 
-  get showCompleted(): boolean
-  {
+  get showCompleted(): boolean {
     return this.filterService.getShowCompleted();
   }
 
-  set showCompleted(value: boolean)
-  {
+  set showCompleted(value: boolean) {
     this.filterService.setShowCompleted(value);
   }
 
-
-
-  getTasks(): Task[]
-  {
-    return this.tasksService.getTasks();
+  ngOnInit(): void {
+    this.loadTasks();
   }
 
-  getCompletedTasks(): number
-  {
-    return this.statisticsService.getCompletedTasksCount();
+  getTasks(): Task[] {
+
+    return this.tasks;
   }
 
-  getPendingTasks(): number
-  {
-    return this.statisticsService.getPendingTasksCount();
+  getCompletedTasks(): number {
+    return this.statisticsService.getCompletedTasksCount(this.tasks);
   }
 
-  getOverdueTasks(): number
-  {
-    return this.statisticsService.getOverdueTasksCount();
+  getPendingTasks(): number {
+    return this.statisticsService.getPendingTasksCount(this.tasks);
   }
 
-  getCompletionRate(): number
-  {
-    return this.statisticsService.getCompletionRate();
+  getOverdueTasks(): number {
+    return this.statisticsService.getOverdueTasksCount(this.tasks);
   }
 
-  getProductivityLevel(): string
-  {
-    return this.statisticsService.getProductivityLevel();
+  getCompletionRate(): number {
+    return this.statisticsService.getCompletionRate(this.tasks);
   }
 
-  addTask(): void
-  {
-    if (!this.newTask.title || !this.newTask.category || !this.newTask.dueDate)
-    {
+  getProductivityLevel(): string {
+    return this.statisticsService.getProductivityLevel(this.tasks);
+  }
+
+  addTask(): void {
+    if (!this.newTask.title || !this.newTask.category || !this.newTask.dueDate) {
       return;
     }
 
-    const task: Task = {
-      id: Date.now(),
-      title: this.newTask.title,
-      description: this.newTask.description,
-      category: this.newTask.category,
-      priority: this.newTask.priority,
-      dueDate: new Date(this.newTask.dueDate),
-      status: this.newTask.status,
-      createdAt: new Date()
+    const task: TaskAddRequest = {
+      Title: this.newTask.title,
+      Description: this.newTask.description,
+      Category: this.newTask.category,
+      Priority: this.newTask.priority,
+      DueDate: new Date(this.newTask.dueDate),
+      Status: this.newTask.status,
+      CreatedAt: new Date(),
     };
 
-    this.tasksService.addTask(task);
+    this.tasksService.addTask(task).subscribe({
+      next: (createdTask) => {
+        console.log(createdTask.id); 
+        this.loadTasks();
+        this.clearForm();
+      },
+    });
     this.clearForm();
   }
 
-  clearForm(): void
-  {
+  clearForm(): void {
     this.newTask = {
       title: '',
       description: '',
       category: '',
       priority: 'medium',
       dueDate: '',
-      status: 'pending'
+      status: 'pending',
     };
   }
 
-  getFilteredTasks(): Task[]
-  {
-    let filtered = [...this.getTasks()];
+  getFilteredTasks(): void{
+    let filtered = [...this.tasks];
 
-    if (this.filterStatus !== 'all')
-    {
-      filtered = filtered.filter(task => task.status === this.filterStatus);
+    if (this.filterStatus !== 'all') {
+      filtered = filtered.filter((task) => task.status === this.filterStatus);
     }
 
-    if (this.filterCategory !== 'all')
-    {
-      filtered = filtered.filter(task => task.category === this.filterCategory);
+    if (this.filterCategory !== 'all') {
+      filtered = filtered.filter((task) => task.category === this.filterCategory);
     }
 
-    if (this.filterPriority !== 'all')
-    {
-      filtered = filtered.filter(task => task.priority === this.filterPriority);
+    if (this.filterPriority !== 'all') {
+      filtered = filtered.filter((task) => task.priority === this.filterPriority);
     }
 
-    if (!this.showCompleted)
-    {
-      filtered = filtered.filter(task => task.status !== 'completed');
+    if (!this.showCompleted) {
+      filtered = filtered.filter((task) => task.status !== 'completed');
     }
 
-    return filtered;
+    this.filteredTasks = filtered;
   }
 
-  toggleTaskComplete(id: number): void
-  {
-    this.tasksService.toggleTaskComplete(id);
+  toggleTaskComplete(id: number): void {
+    this.tasksService.toggleTaskComplete(id).subscribe(() => {
+      this.loadTasks();
+    });
   }
 
-  isOverdue(task: Task): boolean
-  {
+  isOverdue(task: Task): boolean {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return new Date(task.dueDate) < today && task.status != 'completed';
   }
 
-  deleteTask(id: number): void
-  {
-    this.tasksService.deleteTask(id);
+  deleteTask(id: number): void {
+    this.tasksService.deleteTask(id).subscribe(() => {
+      this.loadTasks();
+    });
+  }
+
+  loadTasks(): void {
+    this.tasksService.getTasks().subscribe({
+      next: (tasks) => {
+        this.tasks = tasks;
+        this.refreshView();
+        this.changeDetectorRef.detectChanges();
+      },
+      error: (err) => {
+        console.error("Error loading tasks", err);
+      }
+    });
+  }
+
+  refreshView(){
+    this.getFilteredTasks();
+    this.updateStatistics();
+  }
+
+  updateStatistics(): void {
+    this.totalTasks = this.tasks.length;
+    this.completedTasks = this.statisticsService.getCompletedTasksCount(this.tasks);
+    this.pendingTasks = this.statisticsService.getPendingTasksCount(this.tasks);
+    this.overdueTasks = this.statisticsService.getOverdueTasksCount(this.tasks);
+    this.completionRate = this.statisticsService.getCompletionRate(this.tasks);
+    this.productivityLevel = this.statisticsService.getProductivityLevel(this.tasks);
+    this.getFilteredTasks();
+  }
+
+  refreshClicked(): void{
+    this.accountService.postGenerateNewToken().subscribe({
+      next: (response: any) => {
+        localStorage["token"] = response.token;
+        localStorage["refreshToken"] = response.refreshToken;
+        this.refreshView();
+      },
+      error: (err) => {
+        console.error(err);
+      },
+      complete: ()=>{}
+    });
   }
 }

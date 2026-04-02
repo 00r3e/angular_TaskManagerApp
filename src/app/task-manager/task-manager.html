@@ -10,27 +10,27 @@
   <div class="stats-container">
     <div class="stat-card">
       <label class="stat-label">TOTAL TASKS</label>
-      <div class="stat-value">{{ getTasks().length }}</div>
+      <div class="stat-value">{{ totalTasks}}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">COMPLETED</label>
-      <div class="stat-value">{{ getCompletedTasks()}}</div>
+      <div class="stat-value">{{ completedTasks }}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">PENDING</label>
-      <div class="stat-value">{{ getPendingTasks() }}</div>
+      <div class="stat-value">{{ pendingTasks  }}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">OVERDUE</label>
-      <div class="stat-value">{{ getOverdueTasks() }}</div>
+      <div class="stat-value">{{ overdueTasks }}</div>
     </div>
     <div class="stat-card">
       <label class="stat-label">COMPLETION RATE</label>
       <div
         class="stat-value"
         [style.color]="
-          getCompletionRate() >= 70 ? 'green' : getCompletionRate() >= 50 ? 'orange' : 'red'" >
-        {{ getCompletionRate() }} %
+          completionRate >= 70 ? 'green' : completionRate >= 50 ? 'orange' : 'red'" >
+        {{ completionRate }} %
       </div>
     </div>
   </div>
@@ -40,16 +40,18 @@
     <select
       class="filter-dropdown"
       [(ngModel)]="filterStatus"
+      (ngModelChange)="getFilteredTasks()"
       name="All Status"
     >
       <option value="all" selected>All Status</option>
       @for(status of statuses; track status){
         <option [value]="status">{{status}}</option>
-      }
+      } 
     </select>
     <select
       class="filter-dropdown"
       [(ngModel)]="filterCategory"
+      (ngModelChange)="getFilteredTasks()"
     >
       <option value="all" selected>All Categories</option>
       @for(category of categories; track category){
@@ -59,6 +61,7 @@
     <select
       class="filter-dropdown"
       [(ngModel)]="filterPriority"
+      (ngModelChange)="getFilteredTasks()"
     >
       <option value="all" selected>All Priorities</option>
       @for(priority of priorities; track priority){
@@ -68,13 +71,14 @@
     <input
       type="checkbox"
       [(ngModel)]="showCompleted"
+      (ngModelChange)="getFilteredTasks()"
     />
     <label>Show Completed Tasks</label>
   </div>
 
   <!-- Alert -->
 
-  @switch (getProductivityLevel()) {
+  @switch (productivityLevel) {
     @case ('excellent') {
       <div class="alert alert-success">[ALERT] Job done!!</div>
     }
@@ -164,7 +168,7 @@
       >
         <button class="btn btn-primary" type="submit" [disabled]="form.invalid">Add Task</button>
       </div>
-      <button class="btn btn-secondary" (click)="clearForm()">Clear</button>
+      <button type="button" class="btn btn-secondary" (click)="clearForm()">Clear</button>
     </div>
   </form>
 
@@ -172,7 +176,7 @@
   <div class="tasks-section">
     <h1 class="section-header">Tasks</h1>
     <div class="tasks-list">
-      @for (task of getFilteredTasks(); track task.id; let i = $index) {
+      @for (task of filteredTasks; track task.id; let i = $index) {
         <div
           [ngClass]="[
             'task-item',
@@ -184,7 +188,7 @@
             class="task-checkbox"
             type="checkbox"
             [checked]="task.status === 'completed'"
-            (change)="toggleTaskComplete(task.id)"
+            (change)="toggleTaskComplete(task.id!)"
           />
 
           <div class="task-content">
@@ -205,18 +209,20 @@
               </div>
             </div>
           </div>
-          <button class="btn btn-danger" (click)="deleteTask(task.id)">Delete</button>
+          <button class="btn btn-danger" (click)="deleteTask(task.id!)">Delete</button>
         </div>
       }
     </div>
   </div>
 
+  <button class="button btn btn-primary" (click)="refreshClicked()">Refresh Token</button>
+
   <!-- Productivity Score -->
   <div class="productivity-score">
     <div class="score-label">YourProductivity Score</div>
-    <div class="score-value">{{ getCompletionRate() }}%</div>
+    <div class="score-value">{{ completionRate }}%</div>
     <div class="score-label">
-      @if (getCompletionRate() < 100) {
+      @if (completionRate < 100) {
         Keep going!
       } @else {
         Nice job!
