@@ -14,37 +14,35 @@ export class TasksService {
   
   tasks: Task[] = [];
 
-  getTasks(): Observable<Task[]>
-  {
+  // getTasks(): Observable<Task[]>
+  // {
     
-    let headers = new HttpHeaders();
+  //   let headers = new HttpHeaders();
 
-    const token = 
-    localStorage.getItem('token');
+  //   const token = 
+  //   localStorage.getItem('token');
 
-    if (token) {
-      headers = headers.set("Authorization", `Bearer ${token}`);
-      console.log(headers);
-    }
-    return this.http.get<Task[]>("/api/tasks", {headers} );
+  //   if (token) {
+  //     headers = headers.set("Authorization", `Bearer ${token}`);
+  //     console.log(headers);
+  //   }
+  //   return this.http.get<Task[]>("/api/tasks", {headers} );
+  // }
+
+  getTasks(): Observable<Task[]> {
+    return this.http.get<Task[]>("/api/tasks");
   }
 
   addTask(task: TaskAddRequest): Observable<Task>
   {
-    let headers = new HttpHeaders();
-    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
-    return this.http.post<Task>("/api/tasks", task, {headers: headers});
+    return this.http.post<Task>("/api/tasks", task);
   }
 
   deleteTask(id: number): Observable<void> {
-    let headers = new HttpHeaders();
-    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
-    return this.http.delete<void>(`/api/tasks/${id}`, {headers: headers });
+    return this.http.delete<void>(`/api/tasks/${id}`);
   }
 
   toggleTaskComplete(id: number): Observable<void> {
-    let headers = new HttpHeaders();
-    headers = headers.append("Authorization", `Bearer ${localStorage['token']}`);
-    return this.http.patch<void>(`/api/tasks/${id}/toggle`, {headers: headers});
+    return this.http.patch<void>(`/api/tasks/${id}/toggle`, id);
   }
 }

@@ -29,4 +29,16 @@ export class AccountService {
     return this.http.post<any>('/api/account/generate-new-jwt-token', {token: token, refreshToken: refreshToken});
   }
 
+  loadUserFromToken() {
+    const token = localStorage.getItem('token');
+
+    if (!token) return;
+
+    const payload = JSON.parse(atob(token.split('.')[1]));
+
+    this.currentUserName =
+ 
+        payload['name'] ?? null;
+    }
+
 }
