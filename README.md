@@ -1,97 +1,81 @@
-📝 Task Manager App (Angular)
+📌 Task Manager Frontend – Angular
 
-A simple and interactive Task Manager application built with Angular (Standalone Components).
-The app allows users to create, manage, filter, and track tasks while visualizing productivity statistics in real time.
+This repository contains the Angular frontend application for the Task Manager project.
+It is designed to work with an ASP.NET Core Web API backend and provides a full UI for managing tasks and user authentication.
+
+⚠️ Note:
+This project is also integrated into a separate ASP.NET Core repository where the Angular app is served as a production build.
+This repo exists to showcase the full frontend source code.
 
 🚀 Features
 
-➕ Add new tasks with:
+✅ User authentication (Login / Register)
+🔐 JWT authentication with refresh token handling
+👤 User-specific task management
+📈 Productivity score tracking
+🔍 Advanced filtering (status, category, priority)
+✔️ Task completion toggle
+⏰ Overdue task highlighting
+🎯 Clean and responsive UI
 
-Title
-
-Description
-
-Category
-
-Priority
-
-Status
-
-Due date
-
-🗑️ Delete tasks
-
-✅ Mark tasks as completed / pending
-
-🔍 Filter tasks by:
-
-Status
-
-Category
-
-Priority
-
-Show / hide completed tasks
-
-📊 Task statistics dashboard:
-
-Total tasks
-
-Completed tasks
-
-Pending tasks
-
-Overdue tasks
-
-Completion rate (%)
-
-⚠️ Overdue task detection (date-based)
-
-📈 Productivity level indicator:
-
-Excellent
-
-Good
-
-Needs improvement
-
-Poor
-
-🎨 Dynamic UI styling based on task status and priority
-
-⚡ Uses Angular’s new control flow syntax (@if, @for, @switch)
-
-🛠️ Technologies Used
+🛠️ Tech Stack
 
 Angular (Standalone Components)
-
 TypeScript
-
 HTML / CSS
+Angular Forms (ngModel)
+RxJS (Observables)
 
-Angular Forms (Template-driven forms)
+🧩 Project Structure
 
-📂 Project Structure
-src/
+services/
+tasks.service.ts → API communication for tasks
+account.service.ts → Authentication & token handling
+filter.service.ts → Filtering logic
+statistics.service.ts → Task metrics
+components/
+Task Manager UI
+Login / Register صفحات
+Navigation Bar
 
- └── app/
- 
-     
-     ├── task-manager.ts      # Component logic
-     
-     ├── task-manager.html    # Template
-     
-     ├── task-manager.css     # Styling
+🔐 Authentication Flow
 
-▶️ Getting Started
-1️⃣ Install dependencies
-npm install
+User logs in → receives JWT + Refresh Token
+JWT is stored in localStorage
+HTTP requests include JWT in Authorization header
+When token expires → refresh token is used to generate a new JWT
 
-2️⃣ Run the development server
-ng serve
+📡 API Integration
 
-3️⃣ Open in browser
-http://localhost:4200/
+This frontend connects to the backend API:
 
+👉 (link your ASP.NET repo here)
 
-The app will automatically reload when you make changes.
+Main endpoints used:
+
+/api/tasks
+/api/account/login
+/api/account
+/api/account/generate-new-jwt-token
+
+💡 Purpose
+
+This project was built to demonstrate:
+
+Angular application structure
+State & UI management
+Integration with a secure ASP.NET Core API
+JWT authentication flow with refresh tokens
+Clean and maintainable frontend architecture
+
+📷 Future Improvements
+
+UI/UX enhancements
+Better error handling
+Form validation improvements
+Dark mode
+
+🔗 Related Repository
+
+👉 Backend (ASP.NET Core API):
+https://github.com/00r3e/Angular_ASPNETCore_TaskManager
